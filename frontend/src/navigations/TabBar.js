@@ -2,11 +2,11 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 
-import { PostureScreen } from "_scenes/posture";
-import { DailyScreen } from "_scenes/daily";
-import { DataScreen } from "_scenes/data";
-import { ProfileScreen } from "_scenes/profile";
-import { Colors } from "_styles";
+import { PostureScreen } from "../scenes/posture";
+import { DailyScreen } from "../scenes/daily";
+import { DataScreen } from "../scenes/data";
+import { ProfileScreen } from "../scenes/profile";
+import { Colors } from "../styles";
 
 const Tab = createMaterialTopTabNavigator();
 
