@@ -1,13 +1,11 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Colors } from "../../../styles";
-import { HelloWorld } from "_atoms";
+import { Colors } from "_styles";
 
 const DailyScreen = () => {
   const name = "ken";
   return (
     <View style={styles.container}>
-      <HelloWorld />
       <Text>Daily</Text>
     </View>
   );
