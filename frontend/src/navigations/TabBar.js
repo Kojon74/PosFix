@@ -29,7 +29,7 @@ const TabBar = () => {
         renderIndicator: () => null,
       }}
     >
-      <Tab.Screen name="Home" component={PostureScreen} />
+      <Tab.Screen name="Posture" component={PostureScreen} />
       <Tab.Screen name="Daily" component={DailyScreen} />
       <Tab.Screen name="Data" component={DataScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
