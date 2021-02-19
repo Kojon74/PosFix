@@ -6,7 +6,7 @@ import abc
 import os
 import sys
 
-from imus import IMU_Base
+from skinematics.imus import IMU_Base
 from DFRobot_BMX160 import BMX160
 
 sensor = BMX160(1)
@@ -19,12 +19,27 @@ class BMXSensor(IMU_Base):
 
         data = bmx.get_all_data()
         
-        rate = 48000
+        accel = numpy.zeros(shape=(120,3))
+        gyro = numpy.zeros(shape=(120,3))
+        magn = numpy.zeros(shape=(120,3))
+
+        cumtime = 0
+
+        for i in range(120):
+            currtime = time.time() * 1000; 
+            data = bmx.get_all_data()
+            cumtime += (time.time() * 1000) - currtime
+
+            accel[i] = [data[6], data[7], data[8]]
+            gyro[i] = [data[3], data[4], data[5]]
+            magn[i] = [data[0], data[1], data[2]]
+        
+        samp_period = cumtime / 120
 
         out_data = {'rate' : rate,
-                    'acc' : {data[6], data[7], data[8]},
-                    'omega' : {data[3], data[4], data[5]},
-                    'mag': {data[0], data[1], data[2]}
+                    'acc' : accel,
+                    'omega' : gyro,
+                    'mag': magn
                     }
 
         self._set_data(out_data)
