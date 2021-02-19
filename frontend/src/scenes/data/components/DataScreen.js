@@ -1,15 +1,13 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../styles";
+import SessionContainer from "./SessionContainer";
 
 const DataScreen = () => {
   return (
     <View style={styles.container}>
-      <View style={styles.borderBottom}>
-        <View style={styles.headerContainer}>
-          <Text style={styles.header}>Sessions</Text>
-        </View>
-      </View>
+      <Text style={styles.header}>Sessions</Text>
+      <SessionContainer />
     </View>
   );
 };
