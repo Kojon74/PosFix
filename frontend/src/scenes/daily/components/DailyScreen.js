@@ -20,7 +20,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.SECONDARY,
-    // alignItems: "center",
-    // justifyContent: "center",
   },
 });

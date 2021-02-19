@@ -2,26 +2,44 @@ import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Button from "./Button";
 import { Colors } from "../../../styles";
+import CalibrateStartBtn from "./CalibrateStartBtn";
+import CalibrateInstr from "./CalibrateInstr";
+import Stopwatch from "./Stopwatch";
+import { useGlobalContext } from "../context";
 
 const PostureScreen = () => {
-  const [deviceConnected, setDeviceConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isCalbrating, setIsCalibrating] = useState(false);
+  const [isStarted, setIsStarted] = useState(false);
 
-  const calibrate = () => {};
+  const { startStopwatch } = useGlobalContext();
 
-  const startTimer = () => {};
+  const calibrate = () => {
+    setIsCalibrating(true);
+  };
+
+  const startTimer = () => {
+    startStopwatch();
+    setIsStarted(true);
+  };
+
+  const handleIsConnected = () => {
+    setIsConnected(true);
+  };
 
   return (
     <View style={styles.container}>
-      {deviceConnected ? (
-        <View style={styles.homeBtnContainer}>
-          <Button text="Calibrate" primary={false} handlePress={calibrate} />
-          <Button text="Start" primary={true} handlePress={startTimer} />
-        </View>
+      {isConnected && !isCalbrating && !isStarted ? (
+        <CalibrateStartBtn calibrate={calibrate} startTimer={startTimer} />
+      ) : isConnected && isCalbrating ? (
+        <CalibrateInstr setIsCalibrating={setIsCalibrating} />
+      ) : isConnected && isStarted ? (
+        <Stopwatch />
       ) : (
         <Button
           text="Connect"
           primary={false}
-          handlePress={setDeviceConnected}
+          handlePress={handleIsConnected}
         />
       )}
     </View>
@@ -36,9 +54,5 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.SECONDARY,
     alignItems: "center",
     justifyContent: "center",
-  },
-  homeBtnContainer: {
-    height: "20%",
-    justifyContent: "space-between",
   },
 });
