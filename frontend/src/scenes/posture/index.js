@@ -1,1 +1,1 @@
-export { default as PostureScreen } from "./components/PostureScreen";
+export { default as PostureScreen } from "./components";
