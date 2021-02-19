@@ -104,6 +104,84 @@ def analytical(R_initialOrientation=np.eye(3),
 
     return (q, pos, vel)
 
+# Copied and modified frmo the scipy-kinematics library
+def calc_quat(omega, q0, rate, CStype):
+    '''
+    Take an angular velocity (in rad/s), and convert it into the
+    corresponding orientation quaternion.
+    Parameters
+    ----------
+    omega : array, shape (3,) or (N,3)
+        angular velocity [rad/s].
+    q0 : array (3,)
+        vector-part of quaternion (!!)
+    rate : float
+        sampling rate (in [Hz])
+    CStype:  string
+        coordinate_system, space-fixed ("sf") or body_fixed ("bf")
+    Returns
+    -------
+    quats : array, shape (N,4)
+        unit quaternion vectors.
+    Notes
+    -----
+    1) The output has the same length as the input. As a consequence, the last velocity vector is ignored.
+    2) For angular velocity with respect to space ("sf"), the orientation is given by
+      .. math::
+          q(t) = \\Delta q(t_n) \\circ \\Delta q(t_{n-1}) \\circ ... \\circ \\Delta q(t_2) \\circ \\Delta q(t_1) \\circ q(t_0)
+      .. math::
+        \\Delta \\vec{q_i} = \\vec{n(t)}\\sin (\\frac{\\Delta \\phi (t_i)}{2}) = \\frac{\\vec \\omega (t_i)}{\\left| {\\vec \\omega (t_i)} \\right|}\\sin \\left( \\frac{\\left| {\\vec \\omega ({t_i})} \\right|\\Delta t}{2} \\right)
+    3) For angular velocity with respect to the body ("bf"), the sequence of quaternions is inverted.
+    4) Take care that you choose a high enough sampling rate!
+    Examples
+    --------
+    >>> v0 = np.r_[0., 0., 100.] * np.pi/180.
+    >>> omega = np.tile(v0, (1000,1))
+    >>> rate = 100
+    >>> out = quat.calc_quat(omega, [0., 0., 0.], rate, 'sf')
+    array([[ 1.        ,  0.        ,  0.        ,  0.        ],
+       [ 0.99996192,  0.        ,  0.        ,  0.00872654],
+       [ 0.9998477 ,  0.        ,  0.        ,  0.01745241],
+       ..., 
+       [-0.74895572,  0.        ,  0.        ,  0.66262005],
+       [-0.75470958,  0.        ,  0.        ,  0.65605903],
+       [-0.76040597,  0.        ,  0.        ,  0.64944805]])
+    '''
+    
+    omega_05 = np.atleast_2d(omega).copy()
+    
+    # The following is (approximately) the quaternion-equivalent of the trapezoidal integration (cumtrapz)
+    if omega_05.shape[1]>1:
+        omega_05[:-1] = 0.5*(omega_05[:-1] + omega_05[1:])
+
+    omega_t = np.sqrt(np.sum(omega_05**2, 1))
+    omega_nonZero = omega_t>0
+
+    # initialize the quaternion
+    q_delta = np.zeros(omega_05.shape)
+    q_pos = np.zeros((len(omega_05),4))
+    q_pos[0,:] = q0
+
+    # magnitude of position steps
+    dq_total = np.sin(omega_t[omega_nonZero]/(2.*rate))
+
+    q_delta[omega_nonZero,:] = omega_05[omega_nonZero,:] * np.tile(dq_total/omega_t[omega_nonZero], (3,1)).T
+
+    for ii in range(len(omega_05)-1):
+        q1 = q_delta[ii,:]
+        q2 = q_pos[ii,:]
+        if CStype == 'sf':            
+            qm = quat.q_mult(q1,q2)
+        elif CStype == 'bf':
+            qm = quat.q_mult(q2,q1)
+        else:
+            print('I don''t know this type of coordinate system!')
+        q_pos[ii+1,:] = qm
+
+    # print(q_pos)
+
+    return q_pos
+
 # Similar to above analytical solver but with changes for real time use, and varying dx for the integration steps
 # This is modified from the scipy-kinematics library function
 def calc_orientation_position(initialOrientation=np.eye(3),
@@ -154,13 +232,22 @@ def calc_orientation_position(initialOrientation=np.eye(3),
     q0 = vector.q_shortest_rotation(accMeasured[0], g0)    
     
     q_initial = rotmat.convert(initialOrientation, to='quat')
+
+    # print("*** INITIAL ORIENTATION")
+    # print(q_initial)
+
+    # print("*** Q0")
+    # print(q0)
     
     # combine the two, to form a reference orientation. Note that the sequence
     # is very important!
     q_ref = quat.q_mult(q_initial, q0)
     
+    # print("*** QREF")
+    # print(q_ref)
+    
     # Calculate orientation q by "integrating" omega -----------------
-    q = quat.calc_quat(omega, q_ref, rate, 'bf')
+    q = calc_quat(omega, q_ref, rate, 'bf')
 
     # Acceleration, velocity, and position ----------------------------
     # From q and the measured acceleration, get the \frac{d^2x}{dt^2}
@@ -169,7 +256,9 @@ def calc_orientation_position(initialOrientation=np.eye(3),
     accReSpace = vector.rotate_vector(accReSensor, q)
 
     # Make the first position the reference position
-    q = quat.q_mult(q, quat.q_inv(q[0]))
+    # q = quat.q_mult(q, quat.q_inv(q[0]))
+
+    # print(q)
 
     # compensate for drift
     #drift = np.mean(accReSpace, 0)

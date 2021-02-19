@@ -90,6 +90,8 @@ def main_loop():
         # Convert initial rotation quaternion into rotation matrix
         initial_rot = quat.convert(q[NUM_SAMPLES - 1], to='rotmat') # .export(to='rotmat')
 
+        # print(q[NUM_SAMPLES - 1])
+
         # Use analytical method to calculate position, orientation and velocity
         (q, pos, vel) = imu_calc.calc_orientation_position(omega = gyro, 
                                             accMeasured = accel, 
@@ -99,10 +101,10 @@ def main_loop():
                                             timeVector=time)
 
         if DEBUG_MODE == 1:
-            print("Gyro")
-            print(gyro)
-            print("Accel")
-            print(accel)
+            print("q")
+            print(q)
+            # print("pos")
+            # print(pos)
             print(samp_freq)
         
         print("Latest Position: {:.2f} {:.2f} {:.2f}, V: {:.2f} {:.2f} {:.2f},  Orientation: {:.2f} {:.2f} {:.2f} {:.2f}".format(pos[NUM_SAMPLES - 1][0], pos[NUM_SAMPLES - 1][1], pos[NUM_SAMPLES - 1][2], vel[NUM_SAMPLES - 1][0], vel[NUM_SAMPLES - 1][1], vel[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][0], q[NUM_SAMPLES - 1][1], q[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][3]))
