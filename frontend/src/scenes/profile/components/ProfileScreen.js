@@ -1,11 +1,11 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Image } from "react-native";
 import { Colors } from "../../../styles";
 
 const ProfileScreen = () => {
   return (
     <View style={styles.container}>
-      <Text>Profile</Text>
+      <Image source={require("../../../assets/profile.png")} alt="Profile" />
     </View>
   );
 };
