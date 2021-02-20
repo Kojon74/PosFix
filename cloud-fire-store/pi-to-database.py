@@ -1,5 +1,7 @@
-# Write your code here :-)
+# get firebase_admin by `sudo pip install firebase_admin`
 import firebase_admin
+import datetime
+from flexsensor import read_flex
 from firebase_admin import credentials
 from firebase_admin import firestore
 
@@ -9,9 +11,28 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-doc_ref = db.collection('users').document('alovelace')
-doc_ref.set({
-    'first': 'Ada',
-    'last': 'Lovelace',
-    'born': 1815
-})
+
+
+for x in range(1,10000):
+    back_curviture = read_flex()
+    print(x)
+    data = {
+        u'time': datetime.datetime.now(),
+        u'back-curviture': back_curviture,
+        u'neck': {
+            u'position':[1, 1, 1],
+            u'orientation': [1,1,1,1]
+        },
+        u'rShoulder': {
+            u'position':[1, 1, 1],
+            u'orientation': [1,1,1,1]
+        },
+        u'lShoulder': {
+            u'position':[1, 1, 1],
+            u'orientation': [1,1,1,1]        },
+        u'back': {
+            u'position':[1, 1, 1],
+            u'orientation': [1,1,1,1]
+        },
+    }
+    db.collection(u'posture-data').document(str(x)).set(data)
