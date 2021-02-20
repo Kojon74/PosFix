@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { projectAuth, projectFirestore } from "./firebase";
 
 const AppContext = React.createContext();
 
@@ -14,9 +15,20 @@ const AppProvider = ({ children }) => {
     }
   }, [startTime]);
 
+  const firestoreSetStart = (isStart) => {
+    projectFirestore
+      .collection("variables")
+      .doc("start")
+      .set({ isStarted: isStart })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
   const startStopwatch = () => {
     const newStartTime = new Date().getTime();
     setStartTime(newStartTime);
+    firestoreSetStart(true);
   };
 
   const getShowTime = () => {
@@ -27,6 +39,7 @@ const AppProvider = ({ children }) => {
 
   const stopStopwatch = () => {
     clearInterval(timeInterval);
+    firestoreSetStart(false);
   };
 
   return (

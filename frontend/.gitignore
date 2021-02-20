@@ -17,3 +17,5 @@ node_modules/
 .expo/
 
 .vscode/
+
+firebaseKey.js
