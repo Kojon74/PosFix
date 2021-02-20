@@ -30,15 +30,16 @@ export default BodyAnalysis;
 
 const styles = StyleSheet.create({
   container: {
+    height: "auto",
     marginHorizontal: 40,
-    paddingVertical: 10,
+    // paddingVertical: 10,
     flexDirection: "row",
     justifyContent: "space-around",
     borderBottomWidth: 1,
     borderBottomColor: Colors.PRIMARY,
   },
-  image: { width: "35%", marginVertical: -10 },
-  analysis: { width: "65%" },
+  image: { flex: 1, marginVertical: -20, height: "auto" },
+  analysis: { flex: 2 },
   area: {
     marginVertical: 10,
     color: Colors.PRIMARY,

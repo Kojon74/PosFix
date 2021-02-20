@@ -5,7 +5,7 @@ import { Colors } from "../../../styles";
 import CalibrateStartBtn from "./CalibrateStartBtn";
 import CalibrateInstr from "./CalibrateInstr";
 import Stopwatch from "./Stopwatch";
-import { useGlobalContext } from "../context";
+import { useGlobalContext } from "../../../../context";
 
 const PostureScreen = () => {
   const [isConnected, setIsConnected] = useState(false);

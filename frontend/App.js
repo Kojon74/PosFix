@@ -4,6 +4,7 @@ import React from "react";
 import { StyleSheet, SafeAreaView } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { Colors } from "./src/styles";
+import { AppProvider } from "./context";
 
 import NavBar from "./src/navigations/NavBar";
 
@@ -11,11 +12,13 @@ import NavBar from "./src/navigations/NavBar";
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <SafeAreaView style={styles.container}>
-        <NavBar />
-      </SafeAreaView>
-    </NavigationContainer>
+    <AppProvider>
+      <NavigationContainer>
+        <SafeAreaView style={styles.container}>
+          <NavBar />
+        </SafeAreaView>
+      </NavigationContainer>
+    </AppProvider>
   );
 }
 
