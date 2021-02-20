@@ -7,7 +7,9 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 
 # Use a service account
-cred = credentials.Certificate("/home/pi/mu_code/makeuoft2021/posfix/posfix-efa73-firebase-adminsdk-6d6mq-ca65a76d9e.json")
+cred = credentials.Certificate(
+    "/home/pi/mu_code/makeuoft2021/posfix/posfix-efa73-firebase-adminsdk-6d6mq-ca65a76d9e.json"
+)
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
@@ -18,56 +20,51 @@ callback_done = threading.Event()
 # Create a callback on_snapshot function to capture changes
 def on_snapshot(doc_snapshot, changes, read_time):
     for doc in doc_snapshot:
-        print(f'Received document snapshot: {doc.id}')
+        print(f"Received document snapshot: {doc.id}")
         global session
-        if doc.get('isStarted'):
-            session = u'session_1'
+        if doc.get("isStarted"):
+            session = "session_1"
         else:
-            session = u'posture-data'
+            session = "posture-data"
     callback_done.set()
 
-doc_ref = db.collection(u'variables').document(u'start')
+
+doc_ref = db.collection("variables").document("start")
 
 # Watch the document
 doc_watch = doc_ref.on_snapshot(on_snapshot)
 
-i=1
-session = u'posture-data'
+i = 1
+session = "posture-data"
 
 while True:
     back_curviture = read_flex()
     print(back_curviture)
-    
+
     # Warning from back sensor
     if back_curviture < 18:
         data = {
-            u'message': "your leaning too far back",
+            "message": "your leaning too far back",
         }
-        db.collection(u'notification').document(u'notification_2').set(data)
-    if back_curviture < 26:
+        db.collection("notification").document("notification_2").set(data)
+    elif back_curviture < 26:
         data = {
-            u'message': "your leaning too far in buddy",
+            "message": "your leaning too far in buddy",
         }
-        db.collection(u'notification').document(u'notification_2').set(data)
-    
+        db.collection("notification").document("notification_2").set(data)
+    else:
+        data = {
+            "message": "Good posture, keep it up!",
+        }
+        db.collection("notification").document("notification_2").set(data)
+
     data = {
-        u'time': datetime.datetime.now(),
-        u'back-curviture': back_curviture,
-        u'neck': {
-            u'position':[1, 1, 1],
-            u'orientation': [1,1,1,1]
-        },
-        u'rShoulder': {
-            u'position':[1, 1, 1],
-            u'orientation': [1,1,1,1]
-        },
-        u'lShoulder': {
-            u'position':[1, 1, 1],
-            u'orientation': [1,1,1,1]        },
-        u'back': {
-            u'position':[1, 1, 1],
-            u'orientation': [1,1,1,1]
-        },
+        "time": datetime.datetime.now(),
+        "back-curviture": back_curviture,
+        "neck": {"position": [1, 1, 1], "orientation": [1, 1, 1, 1]},
+        "rShoulder": {"position": [1, 1, 1], "orientation": [1, 1, 1, 1]},
+        "lShoulder": {"position": [1, 1, 1], "orientation": [1, 1, 1, 1]},
+        "back": {"position": [1, 1, 1], "orientation": [1, 1, 1, 1]},
     }
     print(session)
     db.collection(session).document(str(datetime.datetime.now())).set(data)
