@@ -16,13 +16,7 @@ initial_orientation = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
 
 # sensor.q_type = "analytical"
 
-bmx1 = BMX160(1, 0x68)
-bmx2 = BMX160(1, 0x69)
-
-bmx3 = BMX160(4, 0x68)
-bmx4 = BMX160(4, 0x69)
-
-NUM_SAMPLES = 5
+NUM_SAMPLES = 10
 DEBUG_MODE = 0
 
 # Get the IMU data and return:
@@ -99,7 +93,7 @@ async def data_loop(bmx: BMX160, q, pos, vel, prev_time):
 
     return q1, prev_time1
 
-async def run_data_acquisition(bmxs):
+async def run_data_acquisition(bmxs, f):
     # orientation quaternions
     q = [np.zeros(shape=(NUM_SAMPLES,4)) for i in range(len(bmxs))] # [quat.Quaternion([0., 0., 0., 0.]) for i in range(120)]
 
@@ -150,15 +144,33 @@ async def run_data_acquisition(bmxs):
         
         current_inc += 1
         
-        if (current_inc % 20 == 0):
+        if (current_inc % 10 == 0):
+            f.seek(0)
             for i in range(len(q)):
-                await print_output(q[i], pos[i], vel[i], i)
+                f.write("{},{},{},{}\n".format(q[i][NUM_SAMPLES - 1][0], q[i][NUM_SAMPLES - 1][1], q[i][NUM_SAMPLES - 1][2], q[i][NUM_SAMPLES - 1][3]))
+                # await print_output(q[i], pos[i], vel[i], i)
+            f.flush()
 
 async def print_output(q, pos, vel, sens):
     # print("Sensor: {} Latest Position: {:.2f} {:.2f} {:.2f}, V: {:.2f} {:.2f} {:.2f},  Orientation: {:.2f} {:.2f} {:.2f} {:.2f}".format(sens, pos[NUM_SAMPLES - 1][0], pos[NUM_SAMPLES - 1][1], pos[NUM_SAMPLES - 1][2], vel[NUM_SAMPLES - 1][0], vel[NUM_SAMPLES - 1][1], vel[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][0], q[NUM_SAMPLES - 1][1], q[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][3]))
     print("Sensor: {} Orientation: {:.2f} {:.2f} {:.2f} {:.2f}".format(sens, q[NUM_SAMPLES - 1][0], q[NUM_SAMPLES - 1][1], q[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][3]))
 
+def begin_recording():
+    bmx1 = BMX160(1, 0x68)
+    bmx2 = BMX160(1, 0x69)
+
+    bmx3 = BMX160(4, 0x68)
+    bmx4 = BMX160(4, 0x69)
+
+    f = open("../sensordata.log", 'w')
+
+    asyncio.run(
+        run_data_acquisition([bmx1, bmx2], f)
+    ) 
+
+    f.close()
+
 def main():
-    asyncio.run(run_data_acquisition([bmx1, bmx2, bmx3, bmx4]))
+    begin_recording()
 
 main()
