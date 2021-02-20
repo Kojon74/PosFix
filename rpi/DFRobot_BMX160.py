@@ -106,9 +106,9 @@ class BMX160:
     accelRange = BMX160_ACCEL_MG_LSB_2G;
     gyroRange = BMX160_GYRO_SENSITIVITY_250DPS;
     
-    def __init__(self, bus):
+    def __init__(self, bus, addr):
         self.i2cbus = smbus.SMBus(bus)
-        self.i2c_addr = 0x68
+        self.i2c_addr = addr
         time.sleep(0.16)
     
     def begin(self):

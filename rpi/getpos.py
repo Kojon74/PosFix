@@ -19,6 +19,9 @@ initial_orientation = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
 bmx1 = BMX160(1, 0x68)
 bmx2 = BMX160(1, 0x69)
 
+bmx3 = BMX160(4, 0x68)
+bmx4 = BMX160(4, 0x69)
+
 NUM_SAMPLES = 20
 DEBUG_MODE = 0
 
@@ -71,7 +74,7 @@ async def data_loop(bmx: BMX160, q, pos, vel):
     # print(q[NUM_SAMPLES - 1])
 
     # Use analytical method to calculate position, orientation and velocity
-    (q, pos, vel) = imu_calc.calc_orientation_position(omega = gyro, 
+    (q1, pos1, vel1) = imu_calc.calc_orientation_position(omega = gyro, 
                                         accMeasured = accel, 
                                         rate = samp_freq, 
                                         initialOrientation = initial_rot, 
@@ -79,19 +82,22 @@ async def data_loop(bmx: BMX160, q, pos, vel):
                                         initialVelocity= vel[NUM_SAMPLES - 1],
                                         timeVector=time)
 
+    return q1, pos1, vel1
+
 async def run_data_acquisition(bmxs):
     # orientation quaternions
-    q = [np.zeros(shape=(NUM_SAMPLES,4)) for i in len(bmxs)] # [quat.Quaternion([0., 0., 0., 0.]) for i in range(120)]
+    q = [np.zeros(shape=(NUM_SAMPLES,4)) for i in range(len(bmxs))] # [quat.Quaternion([0., 0., 0., 0.]) for i in range(120)]
 
     # position
-    pos = [np.zeros(shape=(NUM_SAMPLES,3)) for i in len(bmxs)]
+    pos = [np.zeros(shape=(NUM_SAMPLES,3)) for i in range(len(bmxs))]
 
     # velocity
-    vel = [np.zeros(shape=(NUM_SAMPLES,3)) for i in len(bmxs)]
+    vel = [np.zeros(shape=(NUM_SAMPLES,3)) for i in range(len(bmxs))]
 
     # Setup initial orientation, velocity and position
 
-    q[:][NUM_SAMPLES - 1] = np.array([1., 0., 0., 0.]) # quat.Quaternion(np.array([1.,0.,0.,0.]))
+    for qi in q:
+        qi[NUM_SAMPLES - 1] = np.array([1., 0., 0., 0.]) # quat.Quaternion(np.array([1.,0.,0.,0.]))
 
     # Wait for IMU  to init
 
@@ -104,6 +110,7 @@ async def run_data_acquisition(bmxs):
         # Create tasks
 
         num_tasks = 0
+        tasks = [None] * 2
 
         for bmx in bmxs:
             tasks[num_tasks] = asyncio.create_task(
@@ -112,8 +119,8 @@ async def run_data_acquisition(bmxs):
 
             num_tasks += 1
 
-        for task in tasks:
-            await task
+        for i in range(len(tasks)):
+            (q[i], pos[i], vel[i]) = await tasks[i]
 
         if DEBUG_MODE == 1:
             print("q")
@@ -123,12 +130,12 @@ async def run_data_acquisition(bmxs):
             print(samp_freq)
         
         for i in range(len(q)):
-            await print_output(q[i], pos[i], vel[i])
+            await print_output(q[i], pos[i], vel[i], i)
 
-async def print_output(q, pos, vel):
-    print("Latest Position: {:.2f} {:.2f} {:.2f}, V: {:.2f} {:.2f} {:.2f},  Orientation: {:.2f} {:.2f} {:.2f} {:.2f}".format(pos[NUM_SAMPLES - 1][0], pos[NUM_SAMPLES - 1][1], pos[NUM_SAMPLES - 1][2], vel[NUM_SAMPLES - 1][0], vel[NUM_SAMPLES - 1][1], vel[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][0], q[NUM_SAMPLES - 1][1], q[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][3]))
+async def print_output(q, pos, vel, sens):
+    print("Sensor: {} Latest Position: {:.2f} {:.2f} {:.2f}, V: {:.2f} {:.2f} {:.2f},  Orientation: {:.2f} {:.2f} {:.2f} {:.2f}".format(sens, pos[NUM_SAMPLES - 1][0], pos[NUM_SAMPLES - 1][1], pos[NUM_SAMPLES - 1][2], vel[NUM_SAMPLES - 1][0], vel[NUM_SAMPLES - 1][1], vel[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][0], q[NUM_SAMPLES - 1][1], q[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][3]))
 
 def main():
-    asyncio.run(run_data_acquisition([bmx1, bmx2]))
+    asyncio.run(run_data_acquisition([bmx1, bmx2, bmx3, bmx4]))
 
 main()

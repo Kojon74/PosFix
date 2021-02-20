@@ -11,7 +11,7 @@ import re
 import os
 import sys
 
-import quat, vector, misc, rotmat
+from skinematics import quat, vector, misc, rotmat
 
 # For deprecation warnings
 # import deprecation
@@ -263,7 +263,7 @@ def calc_orientation_position(initialOrientation=np.eye(3),
     # print(initialVelocity)
 
     # print("Time")
-    print(accReSpace)
+    # print(accReSpace)
 
     # Make the first position the reference position
     q = quat.q_mult(q, quat.q_inv(referenceOrientation))
