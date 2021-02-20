@@ -40,6 +40,8 @@ const AppProvider = ({ children }) => {
   const stopStopwatch = () => {
     clearInterval(timeInterval);
     firestoreSetStart(false);
+    setStartTime(null);
+    setStopwatch(0);
   };
 
   return (

@@ -1,11 +1,23 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../../styles";
 import { useGlobalContext } from "../../../../context";
 import Button from "./Button";
+import useFirestore from "../../../../useFirestore";
 
-const Stopwatch = () => {
+const Stopwatch = ({ navigation, setIsStarted }) => {
+  const [notifOpacity, setNotifOpacity] = useState(false);
   const { stopwatch, stopStopwatch } = useGlobalContext();
+  const { docs } = useFirestore("notification");
+
+  useEffect(() => {
+    setNotifOpacity(true);
+    const timeout = setTimeout(() => {
+      // console.log("false");
+      setNotifOpacity(0);
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, [docs]);
 
   const getTimeMins = (seconds) => {
     const minutes = parseInt(seconds / 60);
@@ -15,14 +27,18 @@ const Stopwatch = () => {
 
   const handleStop = () => {
     stopStopwatch();
+    setIsStarted(false);
+    navigation.navigate("Data");
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.notifContainer}>
-        <Text style={styles.notif}>
-          Fix your posture: straighten your back.
-        </Text>
+      <View
+        style={
+          notifOpacity ? styles.notifContainer : styles.notifContainerInvisible
+        }
+      >
+        <Text style={styles.notif}>{docs && docs.message}</Text>
       </View>
       <View style={styles.circleContainer}>
         <Text style={styles.time}>{getTimeMins(stopwatch)}</Text>
@@ -52,6 +68,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 10,
     backgroundColor: Colors.TERTIARY,
+  },
+  notifContainerInvisible: {
+    marginTop: 20,
+    marginBottom: 40,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.TERTIARY,
+    opacity: 1,
   },
   notif: {
     textAlign: "center",

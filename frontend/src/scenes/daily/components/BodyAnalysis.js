@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.PRIMARY,
   },
   image: { flex: 1, marginVertical: -20, height: "auto" },
-  analysis: { flex: 2 },
+  analysis: { flex: 2, marginVertical: 10 },
   area: {
     marginVertical: 10,
     color: Colors.PRIMARY,

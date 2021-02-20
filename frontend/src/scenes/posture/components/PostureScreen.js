@@ -7,7 +7,7 @@ import CalibrateInstr from "./CalibrateInstr";
 import Stopwatch from "./Stopwatch";
 import { useGlobalContext } from "../../../../context";
 
-const PostureScreen = () => {
+const PostureScreen = ({ navigation }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isCalbrating, setIsCalibrating] = useState(false);
   const [isStarted, setIsStarted] = useState(false);
@@ -34,7 +34,7 @@ const PostureScreen = () => {
       ) : isConnected && isCalbrating ? (
         <CalibrateInstr setIsCalibrating={setIsCalibrating} />
       ) : isConnected && isStarted ? (
-        <Stopwatch />
+        <Stopwatch navigation={navigation} setIsStarted={setIsStarted} />
       ) : (
         <Button
           text="Connect"
