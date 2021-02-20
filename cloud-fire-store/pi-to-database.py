@@ -2,6 +2,7 @@
 import firebase_admin
 import datetime
 import threading
+from orientation import read_orientation
 from flexsensor import read_flex
 from firebase_admin import credentials
 from firebase_admin import firestore
@@ -31,12 +32,20 @@ doc_ref = db.collection(u'variables').document(u'start')
 # Watch the document
 doc_watch = doc_ref.on_snapshot(on_snapshot)
 
+# for naming documents
 i=1
+
+# default document
 session = u'posture-data'
 
+
 while True:
+    # flex sensor
     back_curviture = read_flex()
     print(back_curviture)
+    
+    # imu sensor
+    imu_sensors = read_orientation()
     
     # Warning from back sensor
     if back_curviture < 18:
@@ -54,20 +63,16 @@ while True:
         u'time': datetime.datetime.now(),
         u'back-curviture': back_curviture,
         u'neck': {
-            u'position':[1, 1, 1],
-            u'orientation': [1,1,1,1]
+            u'orientation': imu_sensors[0]
         },
         u'rShoulder': {
-            u'position':[1, 1, 1],
-            u'orientation': [1,1,1,1]
+            u'orientation': imu_sensors[1]
         },
         u'lShoulder': {
-            u'position':[1, 1, 1],
-            u'orientation': [1,1,1,1]        },
+            u'orientation': imu_sensors[2]
+        },
         u'back': {
-            u'position':[1, 1, 1],
-            u'orientation': [1,1,1,1]
+            u'orientation': imu_sensors[3]
         },
     }
-    print(session)
-    db.collection(session).document(str(datetime.datetime.now())).set(data)
+    db.collection(u'test').document(str(datetime.datetime.now())).set(data)
