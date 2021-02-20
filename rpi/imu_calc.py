@@ -11,7 +11,7 @@ import re
 import os
 import sys
 
-import quat, vector, misc, rotmat
+from skinematics import quat, vector, misc, rotmat
 
 # For deprecation warnings
 # import deprecation
@@ -190,7 +190,8 @@ def calc_orientation_position(initialOrientation=np.eye(3),
                                 initialVelocity=np.zeros(3),
                                 timeVector=np.zeros((5,1)),
                                 accMeasured=np.column_stack((np.zeros((5,2)), 9.81*np.ones(5))),
-                                rate=100):
+                                rate=100,
+                                referenceOrientation=np.array([1., 0., 0., 0.])):
     ''' Reconstruct position and orientation with an analytical solution,
     from angular velocity and linear acceleration.
     Assumes a start in a stationary position. No compensation for drift.
@@ -255,8 +256,17 @@ def calc_orientation_position(initialOrientation=np.eye(3),
     accReSensor = accMeasured - vector.rotate_vector(g_v, quat.q_inv(q))
     accReSpace = vector.rotate_vector(accReSensor, q)
 
+    # print("Initial Position")
+    # print(initialPosition)
+
+    # print("Initial Velocity")
+    # print(initialVelocity)
+
+    # print("Time")
+    # print(accReSpace)
+
     # Make the first position the reference position
-    # q = quat.q_mult(q, quat.q_inv(q[0]))
+    q = quat.q_mult(q, quat.q_inv(referenceOrientation))
 
     # print(q)
 
