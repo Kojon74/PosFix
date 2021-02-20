@@ -16,7 +16,7 @@ initial_orientation = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
 
 # sensor.q_type = "analytical"
 
-NUM_SAMPLES = 10
+NUM_SAMPLES = 15
 DEBUG_MODE = 0
 
 # Get the IMU data and return:
