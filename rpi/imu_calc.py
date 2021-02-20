@@ -6,6 +6,8 @@ from scipy import constants     # for "g"
 from scipy.integrate import cumtrapz
 import re
 
+import asyncio
+
 # The following construct is required since I want to run the module as a script
 # inside the skinematics-directory
 import os
@@ -283,7 +285,6 @@ def calc_orientation_position(initialOrientation=np.eye(3),
         pos[:,ii] = cumtrapz(vel[:,ii], x=timeVector, initial=initialPosition[ii])
 
     return (q, pos, vel)
-    
 
 # Analytically calculate position from initial conditions, orientation, and acceleration values
 def calc_position(q, accel, initialVelocity, initialPosition, timeVector):
@@ -299,6 +300,11 @@ def calc_position(q, accel, initialVelocity, initialPosition, timeVector):
         vel[:,ii] = cumtrapz(accReSpace[:,ii], x=timeVector, initial=initialVelocity[ii])
         pos[:,ii] = cumtrapz(vel[:,ii], x=timeVector, initial=initialPosition[ii])
     
+    avevel = np.mean(vel, axis=0)
+    aveaccel = np.mean(accel, axis=0)
+    
+    print("Average Accel: {}, Average Velocity: {}, Time taken: {}".format(np.sqrt(aveaccel[0]**2 + aveaccel[1]**2 + aveaccel[2]**2), np.sqrt(avevel[0]**2 + avevel[1]**2 + avevel[2]**2), timeVector[-1] * 1000))
+
     return pos, vel
 
 # Kalman filter data for getting orientation based off of magnetic strength, its taken from the scipy-kinematics library
@@ -463,9 +469,9 @@ def kalman(rate, acc, omega, mag,
         P_k = Phi_k @ P_k @ Phi_k.T + Q_k
 
     # Calculate Position from Orientation
-    pos, vel = calc_position(qOut, acc, initialVelocity, initialPosition, timeVector)
+    # pos, vel = calc_position(qOut, acc, initialVelocity, initialPosition, timeVector)
 
     # Make the first position the reference position
     qOut = quat.q_mult(qOut, quat.q_inv(referenceOrientation))
 
-    return qOut, pos, vel
+    return qOut
