@@ -17,12 +17,12 @@ initial_orientation = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
 # sensor.q_type = "analytical"
 
 bmx1 = BMX160(1, 0x68)
-bmx2 = BMX160(1, 0x69)
+# bmx2 = BMX160(1, 0x69)
 
-bmx3 = BMX160(4, 0x68)
-bmx4 = BMX160(4, 0x69)
+# bmx3 = BMX160(4, 0x68)
+# bmx4 = BMX160(4, 0x69)
 
-NUM_SAMPLES = 20
+NUM_SAMPLES = 50
 DEBUG_MODE = 0
 
 # Get the IMU data and return:
@@ -73,13 +73,23 @@ async def data_loop(bmx: BMX160, q, pos, vel):
 
     # print(q[NUM_SAMPLES - 1])
 
-    # Use analytical method to calculate position, orientation and velocity
-    (q1, pos1, vel1) = imu_calc.calc_orientation_position(omega = gyro, 
-                                        accMeasured = accel, 
-                                        rate = samp_freq, 
-                                        initialOrientation = initial_rot, 
-                                        initialPosition = pos[NUM_SAMPLES - 1],
-                                        initialVelocity= vel[NUM_SAMPLES - 1],
+    # # Use analytical method to calculate position, orientation and velocity
+    # (q1, pos1, vel1) = imu_calc.calc_orientation_position(omega = gyro, 
+    #                                     accMeasured = accel, 
+    #                                     rate = samp_freq, 
+    #                                     initialOrientation = initial_rot, 
+    #                                     initialPosition = pos[NUM_SAMPLES - 1],
+    #                                     initialVelocity= vel[NUM_SAMPLES - 1],
+    #                                     timeVector=time)
+
+    # Use Kalmans method to calculate orientation, and position
+
+    (q1, pos1, vel1) = imu_calc.kalman(rate=samp_freq,
+                                        acc=accel,
+                                        omega=gyro,
+                                        mag=magn,
+                                        initialPosition=pos[NUM_SAMPLES - 1],
+                                        initialVelocity=vel[NUM_SAMPLES - 1],
                                         timeVector=time)
 
     return q1, pos1, vel1
@@ -110,7 +120,7 @@ async def run_data_acquisition(bmxs):
         # Create tasks
 
         num_tasks = 0
-        tasks = [None] * 2
+        tasks = [None] * len(bmxs)
 
         for bmx in bmxs:
             tasks[num_tasks] = asyncio.create_task(
@@ -136,6 +146,6 @@ async def print_output(q, pos, vel, sens):
     print("Sensor: {} Latest Position: {:.2f} {:.2f} {:.2f}, V: {:.2f} {:.2f} {:.2f},  Orientation: {:.2f} {:.2f} {:.2f} {:.2f}".format(sens, pos[NUM_SAMPLES - 1][0], pos[NUM_SAMPLES - 1][1], pos[NUM_SAMPLES - 1][2], vel[NUM_SAMPLES - 1][0], vel[NUM_SAMPLES - 1][1], vel[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][0], q[NUM_SAMPLES - 1][1], q[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][3]))
 
 def main():
-    asyncio.run(run_data_acquisition([bmx1, bmx2, bmx3, bmx4]))
+    asyncio.run(run_data_acquisition([bmx1]))
 
 main()
