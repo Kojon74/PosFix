@@ -1,14 +1,12 @@
-from read_sensor import BMXSensor
-
 from DFRobot_BMX160 import BMX160
 
 import imu_calc
 from skinematics import imus
 from skinematics import quat
-
 import numpy as np
 
 import time as time_lib
+import asyncio
 
 initial_orientation = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
 
@@ -18,9 +16,10 @@ initial_orientation = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
 
 # sensor.q_type = "analytical"
 
-bmx = BMX160(1)
+bmx1 = BMX160(1, 0x68)
+bmx2 = BMX160(1, 0x69)
 
-NUM_SAMPLES = 100
+NUM_SAMPLES = 20
 DEBUG_MODE = 0
 
 # Get the IMU data and return:
@@ -31,7 +30,7 @@ magn  = ndarray(NUM_SAMPLES,3) = Magnetic field strength vector
 rate  = float                  = Average rate
 time  = ndarray(NUM_SAMPLES,1) = Time axis for integration, due to uneven sampling rate
 '''
-def get_imu_data():
+def get_imu_data(bmx: BMX160):
     accel = np.zeros(shape=(NUM_SAMPLES,3))
     gyro = np.zeros(shape=(NUM_SAMPLES,3))
     magn = np.zeros(shape=(NUM_SAMPLES,3))
@@ -58,47 +57,63 @@ def get_imu_data():
 
 # position_computer = imus.Mahony(Sample.per#)
 
-def main_loop():
+async def data_loop(bmx: BMX160, q, pos, vel):
+    # Read IMU data and place into matrices to be analyzed in batches
+    accel, gyro, magn, samp_period, time = get_imu_data(bmx)
+
+    samp_freq = 1/(samp_period)
+
+    # print(q[119])
+
+    # Convert initial rotation quaternion into rotation matrix
+    initial_rot = quat.convert(q[NUM_SAMPLES - 1], to='rotmat') # .export(to='rotmat')
+
+    # print(q[NUM_SAMPLES - 1])
+
+    # Use analytical method to calculate position, orientation and velocity
+    (q, pos, vel) = imu_calc.calc_orientation_position(omega = gyro, 
+                                        accMeasured = accel, 
+                                        rate = samp_freq, 
+                                        initialOrientation = initial_rot, 
+                                        initialPosition = pos[NUM_SAMPLES - 1],
+                                        initialVelocity= vel[NUM_SAMPLES - 1],
+                                        timeVector=time)
+
+async def run_data_acquisition(bmxs):
     # orientation quaternions
-    q = np.zeros(shape=(NUM_SAMPLES,4)) # [quat.Quaternion([0., 0., 0., 0.]) for i in range(120)]
+    q = [np.zeros(shape=(NUM_SAMPLES,4)) for i in len(bmxs)] # [quat.Quaternion([0., 0., 0., 0.]) for i in range(120)]
 
     # position
-    pos = np.zeros(shape=(NUM_SAMPLES,3))
+    pos = [np.zeros(shape=(NUM_SAMPLES,3)) for i in len(bmxs)]
 
     # velocity
-    vel = np.zeros(shape=(NUM_SAMPLES,3))
+    vel = [np.zeros(shape=(NUM_SAMPLES,3)) for i in len(bmxs)]
 
     # Setup initial orientation, velocity and position
 
-    q[NUM_SAMPLES - 1] = np.array([1., 0., 0., 0.]) # quat.Quaternion(np.array([1.,0.,0.,0.]))
+    q[:][NUM_SAMPLES - 1] = np.array([1., 0., 0., 0.]) # quat.Quaternion(np.array([1.,0.,0.,0.]))
 
     # Wait for IMU  to init
 
-    while not bmx.begin():
-        print("Waiting for IMU...")
-        time_lib.sleep(1)
+    for bmx in bmxs:
+        while not bmx.begin():
+            print("Waiting for IMU...")
+            time_lib.sleep(1)
 
     while 1:
+        # Create tasks
 
-        # Read IMU data and place into matrices to be analyzed in batches
-        accel, gyro, magn, samp_period, time = get_imu_data()
+        num_tasks = 0
 
-        samp_freq = 1/(samp_period)
+        for bmx in bmxs:
+            tasks[num_tasks] = asyncio.create_task(
+                data_loop(bmx, q[num_tasks], pos[num_tasks], vel[num_tasks])
+            )
 
-        # print(q[119])
+            num_tasks += 1
 
-        # Convert initial rotation quaternion into rotation matrix
-        initial_rot = quat.convert(q[NUM_SAMPLES - 1], to='rotmat') # .export(to='rotmat')
-
-        # print(q[NUM_SAMPLES - 1])
-
-        # Use analytical method to calculate position, orientation and velocity
-        (q, pos, vel) = imu_calc.calc_orientation_position(omega = gyro, 
-                                            accMeasured = accel, 
-                                            rate = samp_freq, 
-                                            initialOrientation = initial_rot, 
-                                            initialPosition = pos[NUM_SAMPLES - 1],
-                                            timeVector=time)
+        for task in tasks:
+            await task
 
         if DEBUG_MODE == 1:
             print("q")
@@ -107,7 +122,13 @@ def main_loop():
             # print(pos)
             print(samp_freq)
         
-        print("Latest Position: {:.2f} {:.2f} {:.2f}, V: {:.2f} {:.2f} {:.2f},  Orientation: {:.2f} {:.2f} {:.2f} {:.2f}".format(pos[NUM_SAMPLES - 1][0], pos[NUM_SAMPLES - 1][1], pos[NUM_SAMPLES - 1][2], vel[NUM_SAMPLES - 1][0], vel[NUM_SAMPLES - 1][1], vel[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][0], q[NUM_SAMPLES - 1][1], q[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][3]))
+        for i in range(len(q)):
+            await print_output(q[i], pos[i], vel[i])
 
+async def print_output(q, pos, vel):
+    print("Latest Position: {:.2f} {:.2f} {:.2f}, V: {:.2f} {:.2f} {:.2f},  Orientation: {:.2f} {:.2f} {:.2f} {:.2f}".format(pos[NUM_SAMPLES - 1][0], pos[NUM_SAMPLES - 1][1], pos[NUM_SAMPLES - 1][2], vel[NUM_SAMPLES - 1][0], vel[NUM_SAMPLES - 1][1], vel[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][0], q[NUM_SAMPLES - 1][1], q[NUM_SAMPLES - 1][2], q[NUM_SAMPLES - 1][3]))
 
-main_loop()
+def main():
+    asyncio.run(run_data_acquisition([bmx1, bmx2]))
+
+main()
